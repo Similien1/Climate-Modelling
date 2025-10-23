@@ -1,31 +1,14 @@
 
-# ============================================================================
-# DIARRHEA MODELING PIPELINE - CLEANED & ORGANIZED
-# ============================================================================
-
-# 1. SETUP -------------------------------------------------------------------
-# (Optional) setwd() and package installation
-# setwd("D:/your/path")
-
 # 2. LOAD PACKAGES ----------------------------------------------------------
 #if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(
   dplyr, sf, tidyr, ggplot2, lubridate, ggtext, INLA, spdep,
   readxl, rio, here, stringr, INLAOutputs, viridis, patchwork,
   rnaturalearthdata, plotly, gganimate, leaflet, rnaturalearth, usdm,
-  RColorBrewer, gifski, forecast, shiny, car, corrplot
+  RColorBrewer, gifski, forecast, shiny, car, corrplot, scale
 )
 
-# ------------------ Additional cleaning and improvements --------------------
-# The full cleaned and organized script will be inserted here in the next step.
 # ============================================================================
-# DIARRHEA MODELING PIPELINE — CLEANED & STRUCTURED
-# ============================================================================
-
-# 1. SETUP -------------------------------------------------------------------
-# (Optional) setwd("D:/your/path")
-
-
 # 3. LOAD & CLEAN SPATIAL DATA ----------------------------------------------
 Rwa_data <- st_read("shapefile/rwa_adm3_2006_NISR_WGS1984_20181002.shp") %>%
   mutate(
@@ -197,9 +180,8 @@ spatial_model_bym2      <- fit_inla_model(formula_bym2_climate, dat, dat$U_5_Pop
 
 # 10.1 Summaries
 summary(spatial_model)
-FixedEffects(spatial_model)
-######&&&&&&&&&&&&&&&&&&
 summary(spatial_model_clima)
+FixedEffects(spatial_model)
 FixedEffects(spatial_model_clima)
 FixedEffects(spatial_model_lags)
 FixedEffects(spatial_model_bym2) 
@@ -225,10 +207,6 @@ models <- list(
 
 metrics_df <- bind_rows(lapply(models, get_model_metrics, dat$Diarrhoea_cases), .id = "Model")
 print(metrics_df)
-
-
-
-
 # 13. TEMPORAL EFFECTS ------------------------------------------------------
 n_time <- length(spatial_model_clima$marginals.random$ID.time)
 
@@ -280,9 +258,6 @@ RR_spatial <- sapply(spatial_model_clima$marginals.random$ID[1:n_sectors],
 
 PP_spatial <- sapply(spatial_model_clima$marginals.random$ID[1:n_sectors],
                      function(m) 1 - inla.pmarginal(0, m))
-
-
-
 # RR Map
 RR<-ggplot(map_rr) +
   geom_sf(aes(fill = RR_cat), color = NA) +
@@ -424,36 +399,7 @@ ggplot(plot_total_df, aes(x = Date, y = Cases, color = Type)) +
 
 ########################################################
 
-
-library(dplyr)
-library(scales)
-
-ggplot(plot_total_df, aes(x = Date, y = Cases, color = Type)) +
-  geom_line(size = 1) +
-  geom_point(size = 2.5) +
-  geom_text(
-    data = dplyr::filter(plot_total_df, Type == "Observed"),
-    aes(label = paste0("Obs=", scales::comma(round(Cases, 0)))),
-    vjust = -0.7, size = 3, color = "black", show.legend = FALSE
-  ) +
-  geom_text(
-    data = dplyr::filter(plot_total_df, Type == "Predicted"),
-    aes(label = paste0("Pred=", scales::comma(round(Cases, 0)))),
-    vjust = 1.2, size = 3, color = "blue", show.legend = FALSE
-  ) +
-  scale_color_manual(values = c("Observed" = "black", "Predicted" = "blue")) +
-  scale_x_date(date_breaks = "2 months", date_labels = "%b %Y") +
-  labs(title = "National Diarrhea Cases: Observed vs Predicted",
-       subtitle = "Monthly Total (All Sectors)",
-       x = "Month", y = "Number of Cases", color = "") +
-  theme_minimal() +
-  theme(plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
-        plot.subtitle = element_text(size = 12, hjust = 0.5),
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "top")
-
-
-####################################################
+###################################################
 # 1. Add predicted mean + 95% CI to dataset
 dat_ci <- dat %>%
   st_drop_geometry() %>%
@@ -518,4 +464,5 @@ ggplot() +
     legend.position = "top"
   )
 ##### to solve the iss of uge cI
+
 
